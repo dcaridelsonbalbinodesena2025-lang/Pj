@@ -216,8 +216,64 @@
         alert("Configurações Salvas!");
         updateFinanceiroUI();
     }
+    const LISTA_ATIVOS_HTML = `
+        <option value="OFF" style="color: #ff3355; font-weight: bold;">❌ DESATIVAR SLOT</option>
+        <optgroup label="SINTÉTICOS">
+            <option value="R_10">📊 Volatility 10</option>
+            <option value="R_25">📊 Volatility 25</option>
+            <option value="R_50">📊 Volatility 50</option>
+            <option value="R_75">📊 Volatility 75</option>
+            <option value="R_100">📊 Volatility 100</option>
+            <option value="1HZ10V">📈 Volatility 10 (1s)</option>
+            <option value="1HZ25V">📈 Volatility 25 (1s)</option>
+            <option value="1HZ50V">📈 Volatility 50 (1s)</option>
+            <option value="1HZ75V">📈 Volatility 75 (1s)</option>
+            <option value="1HZ100V">📈 Volatility 100 (1s)</option>
+            <option value="BOOM300">💥 Boom 300</option>
+            <option value="BOOM500">💥 Boom 500</option>
+            <option value="BOOM1000">💥 Boom 1000</option>
+            <option value="CRASH300">📉 Crash 300</option>
+            <option value="CRASH500">📉 Crash 500</option>
+            <option value="CRASH1000">📉 Crash 1000</option>
+            <option value="ST50">🎢 Step Index</option>
+        </optgroup>
+        <optgroup label="FOREX">
+            <option value="frxAUDUSD">💱 AUD/USD</option>
+            <option value="frxEURUSD">💱 EUR/USD</option>
+            <option value="frxGBPUSD">💱 GBP/USD</option>
+            <option value="frxNZDUSD">💱 NZD/USD</option>
+            <option value="frxUSDCAD">💱 USD/CAD</option>
+            <option value="frxUSDCHF">💱 USD/CHF</option>
+            <option value="frxUSDJPY">💱 USD/JPY</option>
+            <option value="frxAUDCAD">💱 AUD/CAD</option>
+            <option value="frxAUDCHF">💱 AUD/CHF</option>
+            <option value="frxAUDJPY">💱 AUD/JPY</option>
+            <option value="frxAUDNZD">💱 AUD/NZD</option>
+            <option value="frxEURAUD">💱 EUR/AUD</option>
+            <option value="frxEURCAD">💱 EUR/CAD</option>
+            <option value="frxEURCHF">💱 EUR/CHF</option>
+            <option value="frxEURGBP">💱 EUR/GBP</option>
+            <option value="frxEURJPY">💱 EUR/JPY</option>
+            <option value="frxEURNZD">💱 EUR/NZD</option>
+            <option value="frxGBPAUD">💱 GBP/AUD</option>
+            <option value="frxGBPCAD">💱 GBP/CAD</option>
+            <option value="frxGBPCHF">💱 GBP/CHF</option>
+            <option value="frxGBPJPY">💱 GBP/JPY</option>
+            <option value="frxGBPNZD">💱 GBP/NZD</option>
+            <option value="frxNZDJPY">💱 NZD/JPY</option>
+            <option value="frxUSDMXN">💱 USD/MXN</option>
+            <option value="frxSGDJPY">💱 SGD/JPY</option>
+            <option value="frxEURNOK">💱 EUR/NOK</option>
+            <option value="frxEURPLN">💱 EUR/PLN</option>
+            <option value="frxEURSEK">💱 EUR/SEK</option>
+            <option value="frxUSDSGD">💱 USD/SGD</option>
+            <option value="frxXAUUSD">🪙 OURO (XAU/USD)</option>
+        </optgroup>
+        <optgroup label="CRIPTO">
+            <option value="cryBTCUSD">₿ BITCOIN (BTC/USD)</option>
+            <option value="cryETHUSD">♢ ETHEREUM (ETH/USD)</option>
+        </optgroup>`;
 
-    const LISTA = `<option value="OFF">🔴 DESATIVADO</option><option value="1HZ10V">Volatility 10 (1s)</option><option value="1HZ100V">Volatility 100 (1s)</option><option value="frxEURUSD">EUR/USD</option>`;
     const grid = document.getElementById('grid');
     for (let i = 1; i <= 4; i++) {
         grid.innerHTML += `<div class="card off" id="div-card${i}"><div class="stat-label">MONITOR ${i}</div><div class="thermometer-wrap"><div class="thermometer-fill" id="therm-card${i}"></div></div><div class="status-box"><div id="status-card${i}" class="status-txt">OFF</div></div><div class="price-val" id="price-card${i}">---</div><select class="select-ativo" onchange="iniciarMotor('card${i}', this.value, this.options[this.selectedIndex].text)">${LISTA}</select></div>`;
