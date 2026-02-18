@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KCM - Multi Estratégia (SERVER MODE)</title>
+    <title>KCM - Multi Estratégia (SERVER)</title>
     <style>
         :root { 
             --neon-blue: #1e90ff; --neon-green: #00ff88; --neon-red: #ff3355; 
@@ -38,13 +38,11 @@
         .status-txt { font-size: 9px; font-weight: bold; color: var(--neon-blue); text-align: center; }
         .price-val { font-family: monospace; color: var(--gale); text-align: center; font-size: 11px; margin-top: 5px; }
         .select-ativo { background: #0d0f12; color: #fff; border: 1px solid #444; font-size: 10px; width: 100%; padding: 5px; margin-top: 10px; border-radius: 5px; }
-        .srv-status { font-size: 10px; padding: 5px 15px; border-radius: 20px; background: #111; margin-bottom: 10px; border: 1px solid #333; }
     </style>
 </head>
 <body>
 
-    <div class="logo">K.C<span>📈</span>M MULTI/ESTRATEGIA-CONTROL</div>
-    <div id="conexao" class="srv-status" style="color: var(--neon-green);">CONECTADO AO SERVIDOR NODE.JS</div>
+    <div class="logo">K.C<span>📈</span>M MULTI/ESTRATEGIA</div>
 
     <div class="painel-financeiro">
         <div class="fin-row">
@@ -57,7 +55,7 @@
                 <input type="number" id="inpPayout" class="fin-input" value="95">
             </div>
         </div>
-        <div class="stats-row" style="border-top: 1px solid #222; padding-top: 10px; margin-bottom: 10px;">
+        <div class="stats-row">
             <div><span class="stat-label">Banca Atual</span><span class="stat-val" style="color:#fff" id="display-banca">R$ 5000.00</span></div>
             <div><span class="stat-label">Lucro Hoje</span><span class="stat-val" style="color:var(--neon-green)" id="display-lucro">R$ 0.00</span></div>
             <div><span class="stat-label">Crescimento</span><span class="stat-val" style="color:var(--neon-blue)" id="display-crescimento">0%</span></div>
@@ -86,7 +84,7 @@
             <button id="btn-retra" class="btn-toggle btn-on" onclick="toggleEstrat('SNIPER (RETRAÇÃO)')">ATIVO</button>
             <div class="estrat-stats"><span id="stats-retra-w" style="color:var(--neon-green)">0W</span> <span id="stats-retra-l" style="color:var(--neon-red)">0L</span></div>
         </div>
-        <button class="btn-salvar" style="grid-column: span 2;" onclick="salvarConfig()">SALVAR BANCA/PAYOUT</button>
+        <button class="btn-salvar" style="grid-column: span 2;" onclick="salvarConfig()">SALVAR CONFIGS</button>
     </div>
 
     <div class="painel-global">
@@ -101,21 +99,18 @@
     <div class="grid-container" id="grid"></div>
 
 <script>
-    // Configurações do App
+    // Configurações e Stats
     let fin = { bancaInicial: 5000, bancaAtual: 5000, payout: 0.95, perdaTotal: 0 };
     let stats = { winDireto: 0, winG1: 0, winG2: 0, loss: 0, totalAnalises: 0 };
     let configEstrategias = { "REGRA 1": true, "FLUXO SNIPER": true, "ZIGZAG FRACTAL": true, "SNIPER (RETRAÇÃO)": true };
-    let ranking = {
-        "REGRA 1": { w: 0, l: 0 }, "FLUXO SNIPER": { w: 0, l: 0 },
-        "ZIGZAG FRACTAL": { w: 0, l: 0 }, "SNIPER (RETRAÇÃO)": { w: 0, l: 0 }
-    };
+    let ranking = { "REGRA 1": { w: 0, l: 0 }, "FLUXO SNIPER": { w: 0, l: 0 }, "ZIGZAG FRACTAL": { w: 0, l: 0 }, "SNIPER (RETRAÇÃO)": { w: 0, l: 0 } };
     let motores = {};
 
-    function getBrasiliaTime(date = new Date()) {
-        return date.toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+    function getBrasiliaTime() {
+        return new Date().toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo' });
     }
 
-    // NOVA FUNÇÃO: Comunica com o servidor Node.js
+    // --- FUNÇÃO MUDADA PARA FALAR COM O SERVER.JS ---
     async function enviarTelegram(msg, comBotao = true) {
         try {
             await fetch('/api/telegram', {
@@ -123,47 +118,26 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ mensagem: msg, comBotao: comBotao })
             });
-        } catch (e) {
-            console.error("Erro ao contactar servidor");
-        }
+        } catch (e) { console.error("Erro no servidor"); }
     }
 
-    // Funções de Mensagens
-    function msgAlerta(nome, est, dir) {
-        enviarTelegram(`🔍 *ALERTA DE SINAL*\n\n📊 Ativo: ${nome}\n⚡ Estratégia: ${est}\n🎯 Direção: ${dir}\n⏰ Entrada prevista: ${getBrasiliaTime()}`, false);
-    }
-    function msgEntrada(nome, est, dir, tempo) {
-        let d = dir === "CALL" ? "COMPRA 🟢" : "VENDA 🔴";
-        let fim = new Date(Date.now() + tempo * 1000);
-        let placar = `🟢 ${stats.winDireto + stats.winG1 + stats.winG2}W | 🔴 ${stats.loss}L`;
-        enviarTelegram(`🚀 *ENTRADA CONFIRMADA*\n\n📊 Ativo: ${nome}\n⚡ Estratégia: ${est}\n🎯 Direção: ${d}\n🕒 Início: ${getBrasiliaTime()}\n🏁 Fim: ${getBrasiliaTime(fim)}\n📈 Placar: ${placar}`);
-    }
-    function msgGale(nome, est, dir, nivel) {
-        let d = dir === "CALL" ? "COMPRA 🟢" : "VENDA 🔴";
-        let fim = new Date(Date.now() + 60000);
-        enviarTelegram(`🔄 *ENTRADA NO GALE ${nivel}*\n\n📊 Ativo: ${nome}\n⚡ Estratégia: ${est}\n🎯 Direção: ${d}\n🕒 Início: ${getBrasiliaTime()}\n🏁 Fim: ${getBrasiliaTime(fim)}`);
-    }
-    function msgResultado(nome, est, res, status) {
-        let emoji = res === 'WIN' ? '✅' : '❌';
-        let placar = `🟢 ${stats.winDireto + stats.winG1 + stats.winG2}W | 🔴 ${stats.loss}L`;
-        enviarTelegram(`${emoji} *RESULTADO: ${res === 'WIN' ? 'GREEN' : 'RED'}*\n\n🚦 Status: ${status}\n📊 Ativo: ${nome}\n⚡ Estratégia: ${est}\n📈 Placar: ${placar}`);
-    }
+    // Lógica de Mensagens
+    function msgAlerta(nome, est, dir) { enviarTelegram(`🔍 *SINAL DETECTADO*\n\n📊 Ativo: ${nome}\n⚡ Estratégia: ${est}\n🎯 Direção: ${dir}\n⏰ Hora: ${getBrasiliaTime()}`, false); }
+    function msgEntrada(nome, est, dir, tempo) { enviarTelegram(`🚀 *ENTRADA REALIZADA*\n\n📊 Ativo: ${nome}\n⚡ Estratégia: ${est}\n🎯 Direção: ${dir}\n⏱ Expiração: ${tempo}s`); }
+    function msgGale(nome, est, dir, nivel) { enviarTelegram(`🔄 *GALE ${nivel}*\n\n📊 Ativo: ${nome}\n🎯 Direção: ${dir}`); }
+    function msgResultado(nome, est, res) { enviarTelegram(`${res === 'WIN' ? '✅' : '❌'} *RESULTADO: ${res}*\n📊 Ativo: ${nome}\n⚡ Estratégia: ${est}`); }
 
-    // Motor de Análise
+    // Motor WebSocket
     function iniciarMotor(cardId, ativoId, nomeAtivo) {
         if (motores[cardId]?.ws) motores[cardId].ws.close();
         if (ativoId === "OFF") {
-            motores[cardId] = { status: "OFF", preco: "---" };
+            motores[cardId] = null;
             document.getElementById(`div-${cardId}`).classList.add('off');
-            document.getElementById(`price-${cardId}`).innerText = "---";
-            document.getElementById(`status-${cardId}`).innerText = "OFF";
             return;
         }
 
         let m = {
-            nome: nomeAtivo, status: "MONITORANDO", preco: "0.0000", forca: 50,
-            velaAb: 0, fechamentoAnt: 0, histCores: [],
-            sinalPendenteR1: null, buscandoTaxaR1: false,
+            nome: nomeAtivo, status: "MONITORANDO", preco: "0.00", forca: 50, velaAb: 0,
             op: { ativa: false, est: "", pre: 0, t: 0, dir: "", g: 0, val: 0 },
             ws: new WebSocket('wss://ws.binaryws.com/websockets/v3?app_id=1089')
         };
@@ -176,43 +150,13 @@
             const s = new Date().getSeconds();
             m.preco = p.toFixed(5);
 
+            if (s === 0) m.velaAb = p;
             if (m.velaAb > 0) m.forca = Math.min(98, Math.max(2, 50 + ((p - m.velaAb) / (m.velaAb * 0.0002) * 20)));
 
-            if (s === 0 && m.velaAb !== p) {
-                if (m.velaAb > 0) m.histCores.push(p > m.velaAb ? "V" : "R");
-                if (m.histCores.length > 5) m.histCores.shift();
-                m.fechamentoAnt = m.velaAb; m.velaAb = p;
-
-                if (configEstrategias["REGRA 1"] && !m.op.ativa && (m.forca >= 82 || m.forca <= 18)) {
-                    m.sinalPendenteR1 = m.forca >= 82 ? "CALL" : "PUT";
-                    m.buscandoTaxaR1 = true;
-                    msgAlerta(m.nome, "REGRA 1", m.sinalPendenteR1);
-                }
-            }
-
-            if (m.buscandoTaxaR1 && !m.op.ativa) {
-                let diffV = Math.abs(m.fechamentoAnt - m.velaAb) || 0.0001;
-                let confirmou = (m.sinalPendenteR1 === "CALL" && p <= (m.velaAb - (diffV * 0.2))) || 
-                                (m.sinalPendenteR1 === "PUT" && p >= (m.velaAb + (diffV * 0.2)));
-                if (confirmou) { 
-                    disparar(cardId, "REGRA 1", m.sinalPendenteR1, 60); 
-                    m.buscandoTaxaR1 = false; 
-                }
-            }
-
-            if (s === 30 && !m.op.ativa && !m.buscandoTaxaR1) {
-                let ult3 = m.histCores.slice(-3);
-                if (configEstrategias["FLUXO SNIPER"] && ult3.length === 3 && ult3.every(c => c === ult3[0])) {
-                    disparar(cardId, "FLUXO SNIPER", ult3[0] === "V" ? "CALL" : "PUT", 30);
-                } else if (configEstrategias["ZIGZAG FRACTAL"]) {
-                    if (m.forca > 80) disparar(cardId, "ZIGZAG FRACTAL", "PUT", 30);
-                    else if (m.forca < 20) disparar(cardId, "ZIGZAG FRACTAL", "CALL", 30);
-                }
-            }
-
-            if (s === 45 && !m.op.ativa && configEstrategias["SNIPER (RETRAÇÃO)"]) {
-                let diffP = (p - m.velaAb) / m.velaAb * 1000;
-                if (Math.abs(diffP) > 0.8) disparar(cardId, "SNIPER (RETRAÇÃO)", diffP > 0 ? "PUT" : "CALL", 15);
+            // Gatilhos Simples
+            if (!m.op.ativa && s === 30) {
+                if (m.forca > 80) disparar(cardId, "REGRA 1", "PUT", 30);
+                else if (m.forca < 20) disparar(cardId, "REGRA 1", "CALL", 30);
             }
 
             if (m.op.ativa) {
@@ -222,9 +166,7 @@
                     let ganhou = (m.op.dir === "CALL" && p > m.op.pre) || (m.op.dir === "PUT" && p < m.op.pre);
                     processarResultado(cardId, ganhou, p);
                 }
-            } else {
-                m.status = m.buscandoTaxaR1 ? "AGUARDANDO TAXA" : "MONITORANDO";
-            }
+            } else { m.status = "MONITORANDO"; }
 
             document.getElementById(`price-${cardId}`).innerText = m.preco;
             document.getElementById(`therm-${cardId}`).style.width = m.forca + "%";
@@ -245,27 +187,17 @@
 
     function processarResultado(cardId, ganhou, precoFinal) {
         let m = motores[cardId];
-        let est = m.op.est;
         if (ganhou) {
-            let lucroOp = m.op.val * fin.payout;
-            fin.bancaAtual += (m.op.val + lucroOp);
-            if (m.op.g === 0) stats.winDireto++;
-            else stats.winG1++;
-            ranking[est].w++;
-            msgResultado(m.nome, est, 'WIN', m.op.g === 0 ? "DIRETO" : `GALE ${m.op.g}`);
+            fin.bancaAtual += (m.op.val * (1 + fin.payout));
+            stats.winDireto++;
+            msgResultado(m.nome, m.op.est, 'WIN');
             m.op.ativa = false;
-        } else if (m.op.g < (est === "REGRA 1" ? 2 : 1)) {
-            m.op.g++;
-            m.op.val *= 2;
-            fin.bancaAtual -= m.op.val;
-            m.op.t = 60;
-            m.op.pre = precoFinal;
-            msgGale(m.nome, est, m.op.dir, m.op.g);
+        } else if (m.op.g < 1) {
+            m.op.g++; m.op.val *= 2; fin.bancaAtual -= m.op.val; m.op.t = 30; m.op.pre = precoFinal;
+            msgGale(m.nome, m.op.est, m.op.dir, m.op.g);
         } else {
             stats.loss++;
-            ranking[est].l++;
-            fin.perdaTotal += m.op.val;
-            msgResultado(m.nome, est, 'LOSS', `LOSS GALE ${m.op.g}`);
+            msgResultado(m.nome, m.op.est, 'LOSS');
             m.op.ativa = false;
         }
         stats.totalAnalises++;
@@ -274,67 +206,21 @@
 
     function updateFinanceiroUI() {
         document.getElementById('display-banca').innerText = "R$ " + fin.bancaAtual.toFixed(2);
-        let lucro = fin.bancaAtual - fin.bancaInicial;
-        document.getElementById('display-lucro').innerText = "R$ " + lucro.toFixed(2);
-        document.getElementById('display-crescimento').innerText = ((fin.bancaAtual / fin.bancaInicial - 1) * 100).toFixed(2) + "%";
         document.getElementById('g-direto').innerText = stats.winDireto;
-        document.getElementById('g-gales').innerText = stats.winG1 + stats.winG2;
         document.getElementById('g-loss').innerText = stats.loss;
-        let totalW = stats.winDireto + stats.winG1 + stats.winG2;
-        document.getElementById('g-precisao').innerText = stats.totalAnalises > 0 ? ((totalW / stats.totalAnalises) * 100).toFixed(1) + "%" : "0%";
-        document.getElementById('stats-regra1-w').innerText = ranking["REGRA 1"].w + "W";
-        document.getElementById('stats-regra1-l').innerText = ranking["REGRA 1"].l + "L";
-        document.getElementById('stats-fluxosniper-w').innerText = ranking["FLUXO SNIPER"].w + "W";
-        document.getElementById('stats-fluxosniper-l').innerText = ranking["FLUXO SNIPER"].l + "L";
-        document.getElementById('stats-zigzag-w').innerText = ranking["ZIGZAG FRACTAL"].w + "W";
-        document.getElementById('stats-zigzag-l').innerText = ranking["ZIGZAG FRACTAL"].l + "L";
-        document.getElementById('stats-retra-w').innerText = ranking["SNIPER (RETRAÇÃO)"].w + "W";
-        document.getElementById('stats-retra-l').innerText = ranking["SNIPER (RETRAÇÃO)"].l + "L";
-    }
-
-    function toggleEstrat(nome) {
-        configEstrategias[nome] = !configEstrategias[nome];
-        let btnMap = { "REGRA 1": "btn-regra1", "FLUXO SNIPER": "btn-fluxosniper", "ZIGZAG FRACTAL": "btn-zigzag", "SNIPER (RETRAÇÃO)": "btn-retra" };
-        let btn = document.getElementById(btnMap[nome]);
-        btn.innerText = configEstrategias[nome] ? "ATIVO" : "DESATIVADO";
-        btn.className = configEstrategias[nome] ? "btn-toggle btn-on" : "btn-toggle btn-off";
     }
 
     function salvarConfig() {
         fin.bancaInicial = parseFloat(document.getElementById('inpBanca').value);
         fin.bancaAtual = fin.bancaInicial;
-        fin.payout = parseFloat(document.getElementById('inpPayout').value) / 100;
-        alert("Configurações Aplicadas!");
+        alert("Configurações Salvas!");
         updateFinanceiroUI();
     }
 
-    const LISTA_ATIVOS_HTML = `
-        <option value="OFF" style="color: #ff3355; font-weight: bold;">🔴 DESATIVAR MONITOR</option>
-        <optgroup label="🌍 FOREX">
-            <option value="frxEURUSD">EUR/USD</option>
-            <option value="frxGBPUSD">GBP/USD</option>
-            <option value="frxUSDJPY">USD/JPY</option>
-            <option value="frxAUDUSD">AUD/USD</option>
-        </optgroup>
-        <optgroup label="🔥 SINTÉTICOS">
-            <option value="1HZ10V">Volatility 10 (1s)</option>
-            <option value="1HZ50V">Volatility 50 (1s)</option>
-            <option value="1HZ100V">Volatility 100 (1s)</option>
-            <option value="R_100">Volatility 100</option>
-        </optgroup>`;
-
+    const LISTA = `<option value="OFF">🔴 DESATIVADO</option><option value="1HZ10V">Volatility 10 (1s)</option><option value="1HZ100V">Volatility 100 (1s)</option><option value="frxEURUSD">EUR/USD</option>`;
     const grid = document.getElementById('grid');
-    for (let i = 1; i <= 6; i++) {
-        grid.innerHTML += `
-            <div class="card off" id="div-card${i}">
-                <div class="stat-label">MONITOR ${i}</div>
-                <div class="thermometer-wrap"><div class="thermometer-fill" id="therm-card${i}"></div></div>
-                <div class="status-box"><div id="status-card${i}" class="status-txt">OFF</div></div>
-                <div class="price-val" id="price-card${i}">---</div>
-                <select class="select-ativo" onchange="iniciarMotor('card${i}', this.value, this.options[this.selectedIndex].text)">
-                    ${LISTA_ATIVOS_HTML}
-                </select>
-            </div>`;
+    for (let i = 1; i <= 4; i++) {
+        grid.innerHTML += `<div class="card off" id="div-card${i}"><div class="stat-label">MONITOR ${i}</div><div class="thermometer-wrap"><div class="thermometer-fill" id="therm-card${i}"></div></div><div class="status-box"><div id="status-card${i}" class="status-txt">OFF</div></div><div class="price-val" id="price-card${i}">---</div><select class="select-ativo" onchange="iniciarMotor('card${i}', this.value, this.options[this.selectedIndex].text)">${LISTA}</select></div>`;
     }
 </script>
 </body>
