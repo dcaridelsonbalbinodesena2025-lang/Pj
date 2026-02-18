@@ -110,7 +110,6 @@
         return new Date().toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo' });
     }
 
-    // --- FUNÇÃO MUDADA PARA FALAR COM O SERVER.JS ---
     async function enviarTelegram(msg, comBotao = true) {
         try {
             await fetch('/api/telegram', {
@@ -121,13 +120,11 @@
         } catch (e) { console.error("Erro no servidor"); }
     }
 
-    // Lógica de Mensagens
     function msgAlerta(nome, est, dir) { enviarTelegram(`🔍 *SINAL DETECTADO*\n\n📊 Ativo: ${nome}\n⚡ Estratégia: ${est}\n🎯 Direção: ${dir}\n⏰ Hora: ${getBrasiliaTime()}`, false); }
     function msgEntrada(nome, est, dir, tempo) { enviarTelegram(`🚀 *ENTRADA REALIZADA*\n\n📊 Ativo: ${nome}\n⚡ Estratégia: ${est}\n🎯 Direção: ${dir}\n⏱ Expiração: ${tempo}s`); }
     function msgGale(nome, est, dir, nivel) { enviarTelegram(`🔄 *GALE ${nivel}*\n\n📊 Ativo: ${nome}\n🎯 Direção: ${dir}`); }
     function msgResultado(nome, est, res) { enviarTelegram(`${res === 'WIN' ? '✅' : '❌'} *RESULTADO: ${res}*\n📊 Ativo: ${nome}\n⚡ Estratégia: ${est}`); }
 
-    // Motor WebSocket
     function iniciarMotor(cardId, ativoId, nomeAtivo) {
         if (motores[cardId]?.ws) motores[cardId].ws.close();
         if (ativoId === "OFF") {
@@ -153,7 +150,6 @@
             if (s === 0) m.velaAb = p;
             if (m.velaAb > 0) m.forca = Math.min(98, Math.max(2, 50 + ((p - m.velaAb) / (m.velaAb * 0.0002) * 20)));
 
-            // Gatilhos Simples
             if (!m.op.ativa && s === 30) {
                 if (m.forca > 80) disparar(cardId, "REGRA 1", "PUT", 30);
                 else if (m.forca < 20) disparar(cardId, "REGRA 1", "CALL", 30);
@@ -216,67 +212,65 @@
         alert("Configurações Salvas!");
         updateFinanceiroUI();
     }
-    const LISTA_ATIVOS_HTML = `
-        <option value="OFF" style="color: #ff3355; font-weight: bold;">❌ DESATIVAR SLOT</option>
-        <optgroup label="SINTÉTICOS">
-            <option value="R_10">📊 Volatility 10</option>
-            <option value="R_25">📊 Volatility 25</option>
-            <option value="R_50">📊 Volatility 50</option>
-            <option value="R_75">📊 Volatility 75</option>
-            <option value="R_100">📊 Volatility 100</option>
-            <option value="1HZ10V">📈 Volatility 10 (1s)</option>
-            <option value="1HZ25V">📈 Volatility 25 (1s)</option>
-            <option value="1HZ50V">📈 Volatility 50 (1s)</option>
-            <option value="1HZ75V">📈 Volatility 75 (1s)</option>
-            <option value="1HZ100V">📈 Volatility 100 (1s)</option>
-            <option value="BOOM300">💥 Boom 300</option>
-            <option value="BOOM500">💥 Boom 500</option>
-            <option value="BOOM1000">💥 Boom 1000</option>
-            <option value="CRASH300">📉 Crash 300</option>
-            <option value="CRASH500">📉 Crash 500</option>
-            <option value="CRASH1000">📉 Crash 1000</option>
-            <option value="ST50">🎢 Step Index</option>
-        </optgroup>
-        <optgroup label="FOREX">
-            <option value="frxAUDUSD">💱 AUD/USD</option>
-            <option value="frxEURUSD">💱 EUR/USD</option>
-            <option value="frxGBPUSD">💱 GBP/USD</option>
-            <option value="frxNZDUSD">💱 NZD/USD</option>
-            <option value="frxUSDCAD">💱 USD/CAD</option>
-            <option value="frxUSDCHF">💱 USD/CHF</option>
-            <option value="frxUSDJPY">💱 USD/JPY</option>
-            <option value="frxAUDCAD">💱 AUD/CAD</option>
-            <option value="frxAUDCHF">💱 AUD/CHF</option>
-            <option value="frxAUDJPY">💱 AUD/JPY</option>
-            <option value="frxAUDNZD">💱 AUD/NZD</option>
-            <option value="frxEURAUD">💱 EUR/AUD</option>
-            <option value="frxEURCAD">💱 EUR/CAD</option>
-            <option value="frxEURCHF">💱 EUR/CHF</option>
-            <option value="frxEURGBP">💱 EUR/GBP</option>
-            <option value="frxEURJPY">💱 EUR/JPY</option>
-            <option value="frxEURNZD">💱 EUR/NZD</option>
-            <option value="frxGBPAUD">💱 GBP/AUD</option>
-            <option value="frxGBPCAD">💱 GBP/CAD</option>
-            <option value="frxGBPCHF">💱 GBP/CHF</option>
-            <option value="frxGBPJPY">💱 GBP/JPY</option>
-            <option value="frxGBPNZD">💱 GBP/NZD</option>
-            <option value="frxNZDJPY">💱 NZD/JPY</option>
-            <option value="frxUSDMXN">💱 USD/MXN</option>
-            <option value="frxSGDJPY">💱 SGD/JPY</option>
-            <option value="frxEURNOK">💱 EUR/NOK</option>
-            <option value="frxEURPLN">💱 EUR/PLN</option>
-            <option value="frxEURSEK">💱 EUR/SEK</option>
-            <option value="frxUSDSGD">💱 USD/SGD</option>
-            <option value="frxXAUUSD">🪙 OURO (XAU/USD)</option>
-        </optgroup>
-        <optgroup label="CRIPTO">
-            <option value="cryBTCUSD">₿ BITCOIN (BTC/USD)</option>
-            <option value="cryETHUSD">♢ ETHEREUM (ETH/USD)</option>
-        </optgroup>`;
+
+    const LISTA_COMPLETA = [
+        { id: "OFF", nome: "❌ DESATIVAR SLOT" },
+        { id: "R_10", nome: "📊 Volatility 10" },
+        { id: "R_25", nome: "📊 Volatility 25" },
+        { id: "R_50", nome: "📊 Volatility 50" },
+        { id: "R_75", nome: "📊 Volatility 75" },
+        { id: "R_100", nome: "📊 Volatility 100" },
+        { id: "1HZ10V", nome: "📈 Volatility 10 (1s)" },
+        { id: "1HZ25V", nome: "📈 Volatility 25 (1s)" },
+        { id: "1HZ50V", nome: "📈 Volatility 50 (1s)" },
+        { id: "1HZ75V", nome: "📈 Volatility 75 (1s)" },
+        { id: "1HZ100V", nome: "📈 Volatility 100 (1s)" },
+        { id: "BOOM300", nome: "💥 Boom 300" },
+        { id: "BOOM500", nome: "💥 Boom 500" },
+        { id: "BOOM1000", nome: "💥 Boom 1000" },
+        { id: "CRASH300", nome: "📉 Crash 300" },
+        { id: "CRASH500", nome: "📉 Crash 500" },
+        { id: "CRASH1000", nome: "📉 Crash 1000" },
+        { id: "ST50", nome: "🎢 Step Index" },
+        { id: "frxAUDUSD", nome: "💱 AUD/USD" },
+        { id: "frxEURUSD", nome: "💱 EUR/USD" },
+        { id: "frxGBPUSD", nome: "💱 GBP/USD" },
+        { id: "frxNZDUSD", nome: "💱 NZD/USD" },
+        { id: "frxUSDCAD", nome: "💱 USD/CAD" },
+        { id: "frxUSDCHF", nome: "💱 USD/CHF" },
+        { id: "frxUSDJPY", nome: "💱 USD/JPY" },
+        { id: "frxAUDCAD", nome: "💱 AUD/CAD" },
+        { id: "frxAUDCHF", nome: "💱 AUD/CHF" },
+        { id: "frxAUDJPY", nome: "💱 AUD/JPY" },
+        { id: "frxAUDNZD", nome: "💱 AUD/NZD" },
+        { id: "frxEURAUD", nome: "💱 EUR/AUD" },
+        { id: "frxEURCAD", nome: "💱 EUR/CAD" },
+        { id: "frxEURCHF", nome: "💱 EUR/CHF" },
+        { id: "frxEURGBP", nome: "💱 EUR/GBP" },
+        { id: "frxEURJPY", nome: "💱 EUR/JPY" },
+        { id: "frxEURNZD", nome: "💱 EUR/NZD" },
+        { id: "frxGBPAUD", nome: "💱 GBP/AUD" },
+        { id: "frxGBPCAD", nome: "💱 GBP/CAD" },
+        { id: "frxGBPCHF", nome: "💱 GBP/CHF" },
+        { id: "frxGBPJPY", nome: "💱 GBP/JPY" },
+        { id: "frxGBPNZD", nome: "💱 GBP/NZD" },
+        { id: "frxNZDJPY", nome: "💱 NZD/JPY" },
+        { id: "frxUSDMXN", nome: "💱 USD/MXN" },    
+        { id: "frxSGDJPY", nome: "💱 SGD/JPY" },
+        { id: "frxEURNOK", nome: "💱 EUR/NOK" },
+        { id: "frxEURPLN", nome: "💱 EUR/PLN" },
+        { id: "frxEURSEK", nome: "💱 EUR/SEK" },
+        { id: "frxUSDSGD", nome: "💱 USD/SGD" },
+        { id: "frxXAUUSD", nome: "🪙 OURO (XAU/USD)" },
+        { id: "cryBTCUSD", nome: "₿ BITCOIN (BTC/USD)" },
+        { id: "cryETHUSD", nome: "♢ ETHEREUM (ETH/USD)" }
+    ];
+
+    const opcoesHTML = LISTA_COMPLETA.map(a => `<option value="${a.id}">${a.nome}</option>`).join('');
 
     const grid = document.getElementById('grid');
-    for (let i = 1; i <= 4; i++) {
-        grid.innerHTML += `<div class="card off" id="div-card${i}"><div class="stat-label">MONITOR ${i}</div><div class="thermometer-wrap"><div class="thermometer-fill" id="therm-card${i}"></div></div><div class="status-box"><div id="status-card${i}" class="status-txt">OFF</div></div><div class="price-val" id="price-card${i}">---</div><select class="select-ativo" onchange="iniciarMotor('card${i}', this.value, this.options[this.selectedIndex].text)">${LISTA}</select></div>`;
+    for (let i = 1; i <= 6; i++) {
+        grid.innerHTML += `<div class="card off" id="div-card${i}"><div class="stat-label">MONITOR ${i}</div><div class="thermometer-wrap"><div class="thermometer-fill" id="therm-card${i}"></div></div><div class="status-box"><div id="status-card${i}" class="status-txt">OFF</div></div><div class="price-val" id="price-card${i}">---</div><select class="select-ativo" onchange="iniciarMotor('card${i}', this.value, this.options[this.selectedIndex].text)">${opcoesHTML}</select></div>`;
     }
 </script>
 </body>
