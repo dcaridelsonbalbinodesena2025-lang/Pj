@@ -99,7 +99,6 @@
     <div class="grid-container" id="grid"></div>
 
 <script>
-    // Configurações e Stats
     let fin = { bancaInicial: 5000, bancaAtual: 5000, payout: 0.95, perdaTotal: 0 };
     let stats = { winDireto: 0, winG1: 0, winG2: 0, loss: 0, totalAnalises: 0 };
     let configEstrategias = { "REGRA 1": true, "FLUXO SNIPER": true, "ZIGZAG FRACTAL": true, "SNIPER (RETRAÇÃO)": true };
@@ -150,9 +149,10 @@
             if (s === 0) m.velaAb = p;
             if (m.velaAb > 0) m.forca = Math.min(98, Math.max(2, 50 + ((p - m.velaAb) / (m.velaAb * 0.0002) * 20)));
 
-            if (!m.op.ativa && s === 30) {
-                if (m.forca > 80) disparar(cardId, "REGRA 1", "PUT", 30);
-                else if (m.forca < 20) disparar(cardId, "REGRA 1", "CALL", 30);
+            // GATILHO CORRIGIDO PARA M1 (60s)
+            if (!m.op.ativa && s === 0) { 
+                if (m.forca > 80) disparar(cardId, "REGRA 1", "PUT", 60); 
+                else if (m.forca < 20) disparar(cardId, "REGRA 1", "CALL", 60);
             }
 
             if (m.op.ativa) {
@@ -189,7 +189,7 @@
             msgResultado(m.nome, m.op.est, 'WIN');
             m.op.ativa = false;
         } else if (m.op.g < 1) {
-            m.op.g++; m.op.val *= 2; fin.bancaAtual -= m.op.val; m.op.t = 30; m.op.pre = precoFinal;
+            m.op.g++; m.op.val *= 2; fin.bancaAtual -= m.op.val; m.op.t = 60; m.op.pre = precoFinal;
             msgGale(m.nome, m.op.est, m.op.dir, m.op.g);
         } else {
             stats.loss++;
